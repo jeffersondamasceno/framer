@@ -1,0 +1,11 @@
+.text-field { margin: 24px 10px; }
+
+.text-field label { display: block; margin-bottom: 6px; }
+
+.text-field input {
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}

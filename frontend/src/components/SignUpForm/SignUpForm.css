@@ -1,0 +1,17 @@
+.sign-up-form {
+    width: min(100% - 32px, 420px);
+    margin: 20px 20px 0 auto;
+    padding: 8px 0;
+    border: 2px solid #8c52ff;
+    border-radius: 5px;
+}
+
+.sign-up-form__title {
+    margin: 12px 0 20px;
+    text-align: center;
+    font-size: 1.25rem;
+}
+
+@media (max-width: 600px) {
+    .sign-up-form { margin: 20px auto; }
+}
