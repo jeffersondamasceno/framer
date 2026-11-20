@@ -57,7 +57,7 @@ Implementar funcionalidades de carrinho de compras e gerenciamento de pedidos;
 - GitHub
 
 ## Arquitetura
-O sistema é separado em três aplicações:
+O sistema é separado em três camadas principais:
 
 - **Front-End:** Lida com a interação com os usuários e os elementos visuais;
 - **Back-End:** É responsável pelas regras de negócio, processamento de requisições, e comunicação com o banco de dados;
@@ -67,29 +67,42 @@ A comunicação entre front-end e back-end ocorrerá usando uma API REST.
 
 ## Estrutura do projeto
 
-```
+```text
 framer/
 │
 ├── frontend/
 │   ├── public/
+│   │   ├── images/
+│   │   │   └── banner.png
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/
 │   │   │   ├── auth/
 │   │   │   ├── Banner/
 │   │   │   ├── Button/
+│   │   │   ├── home/
 │   │   │   ├── SignUpForm/
 │   │   │   └── TextField/
-│   │   │
+│   │   ├── data/
+│   │   │   └── mockArtwork.ts
 │   │   ├── pages/
+│   │   │   ├── AuthPage.tsx
+│   │   │   └── HomePage.tsx
 │   │   ├── styles/
+│   │   │   ├── auth.css
+│   │   │   └── home.css
+│   │   ├── types/
+│   │   │   └── artwork.ts
+│   │   ├── App.css
 │   │   ├── App.tsx
+│   │   ├── index.css
 │   │   └── main.tsx
 │   │
+│   ├── index.html
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
 │
-├── package-lock.json
 ├── .gitignore
 └── README.md
 ```
@@ -98,5 +111,7 @@ framer/
 
 - `assets/`: Armazenamento de imagens e recursos estáticos;
 - `components/`: Componentes reutilizáveis da inteface; 
+- `data/`: Dados simulados (mocks);
 - `pages/`: Páginas da aplicação;
-- `styles/`: Arquivos de estilização.
+- `styles/`: Arquivos de estilização;
+- `types/`: Interfaces e tipagens TypeScript das entidades do sistema.

@@ -4,6 +4,7 @@ import LoginForm from "../components/auth/LoginForm";
 import SignUpForm from "../components/auth/SignUpForm";
 
 import "../styles/auth.css"
+import Banner from "../components/Banner/Banner";
 
 type AuthMode = "signup" | "login";
 
@@ -14,6 +15,8 @@ function AuthPage() {
 
     return (
         <main className="auth-page container-fluid">
+            <Banner />
+            
             <section className="auth-container">
                 <header className="auth-header">
                     <h1>Bem-vindo ao Framer!</h1>

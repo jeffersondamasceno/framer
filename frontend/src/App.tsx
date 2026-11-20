@@ -1,12 +1,9 @@
-import Banner from "./components/Banner/Banner";
 import './App.css'
-import AuthPage from "./pages/AuthPage";
-
+import HomePage from "./pages/HomePage";
 function App() {
   return (
     <main className="app">
-      <Banner />
-      <AuthPage />
+      <HomePage />
     </main>
   )
 }
