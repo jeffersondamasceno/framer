@@ -2,53 +2,43 @@ import { useState } from "react";
 
 import LoginForm from "../components/auth/LoginForm";
 import SignUpForm from "../components/auth/SignUpForm";
-
-import "../styles/auth.css"
+import AuthSwitch from "../components/auth/AuthSwitch";
 import Banner from "../components/Banner/Banner";
+import type { AuthResponse } from "../services/api";
+
+import "../styles/auth.css";
 
 type AuthMode = "signup" | "login";
 
-function AuthPage() {
-    const [authMode, setAuthMode] = useState<AuthMode>("signup");
+interface AuthPageProps {
+  initialMode?: AuthMode;
+  onAuthSuccess?: (data: AuthResponse) => void;
+}
 
-    const isSignUp = authMode === "signup";
+function AuthPage({ initialMode = "signup", onAuthSuccess }: AuthPageProps) {
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
 
-    return (
-        <main className="auth-page container-fluid">
-            <Banner />
-            
-            <section className="auth-container">
-                <header className="auth-header">
-                    <h1>Bem-vindo ao Framer!</h1>
-                </header>
+  const isSignUp = authMode === "signup";
 
-                <div
-                    className="auth-switch"
-                    role="group"
-                    aria-label="Tipo de autenticação" >
-                        <button
-                            type="button"
-                            className={isSignUp ? "active" : ""}
-                            aria-pressed={isSignUp}
-                            onClick={() => setAuthMode("signup")}
-                        >
-                            Cadastro
-                        </button>
+  return (
+    <main className="auth-page container-fluid">
+      <Banner />
 
-                        <button
-                            type="button"
-                            className={!isSignUp ? "active" : ""}
-                            aria-pressed={!isSignUp}
-                            onClick={() => setAuthMode("login")}
-                        >
-                            Entrar
-                        </button>
-                </div>
+      <section className="auth-container">
+        <header className="auth-header">
+          <h1>Bem-vindo ao Framer!</h1>
+        </header>
 
-                {isSignUp ? <SignUpForm /> : <LoginForm />}
-            </section>
-        </main>
-    )
+        <AuthSwitch mode={authMode} onModeChange={setAuthMode} />
+
+        {isSignUp ? (
+          <SignUpForm onSuccess={onAuthSuccess} />
+        ) : (
+          <LoginForm onSuccess={onAuthSuccess} />
+        )}
+      </section>
+    </main>
+  );
 }
 
 export default AuthPage;

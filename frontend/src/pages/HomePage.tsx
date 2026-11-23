@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -12,11 +12,26 @@ import CreativeProcessModal from '../components/home/CreativeProcessModal';
 import CartDrawer from '../components/home/CartDrawer';
 import ArtistChatModal from '../components/home/ArtistChatModal';
 import HomeFooter from '../components/home/HomeFooter';
+import AuthPage from './AuthPage';
+import {
+  apiRequest,
+  TOKEN_KEY,
+  type AuthResponse,
+  type AuthUser,
+} from '../services/api';
 import '../styles/home.css';
 
-function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+interface HomePageProps {
+  onNavigateToAuth?: () => void;
+}
+
+function HomePage({ onNavigateToAuth }: HomePageProps) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    () => Boolean(localStorage.getItem(TOKEN_KEY))
+  );
   const [userRole, setUserRole] = useState<'comprador' | 'artista'>('comprador');
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -45,6 +60,72 @@ function HomePage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3200);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setIsAuthenticated(false);
+      return;
+    }
+
+    apiRequest<{ user: AuthUser }>('/users/me')
+      .then(({ user }) => {
+        setCurrentUser(user);
+        setUserRole(user.role);
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      });
+  }, []);
+
+  const handleOpenAuth = () => {
+    if (onNavigateToAuth) {
+      onNavigateToAuth();
+    } else {
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = (data: AuthResponse) => {
+    setCurrentUser(data.user);
+    setUserRole(data.user.role);
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+    showToast(`Bem-vindo(a), ${data.user.name}!`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    setUserRole('comprador');
+    showToast('Você saiu da sua conta.');
+  };
+
+  const handleRoleChange = async (newRole: 'comprador' | 'artista') => {
+    if (newRole === userRole) return;
+
+    try {
+      const data = await apiRequest<{
+        message: string;
+        user: AuthUser;
+        token: string;
+      }>('/users/me/role', {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setCurrentUser(data.user);
+      setUserRole(data.user.role);
+      showToast(data.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao alterar perfil.');
+    }
   };
 
   const filteredArtworks = useMemo(() => {
@@ -112,6 +193,10 @@ function HomePage() {
   );
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  if (showAuthModal) {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  }
+
   return (
     <div id="top" className="framer-page d-flex flex-column">
       {toastMessage && (
@@ -130,17 +215,13 @@ function HomePage() {
         searchQuery={searchQuery}
         cartCount={cartCount}
         onSearchChange={setSearchQuery}
-        onLogin={() => {
-          setIsAuthenticated(true);
-          showToast('Sessão iniciada com sucesso!');
-        }}
-        onLogout={() => {
-          setIsAuthenticated(false);
-          showToast('Você saiu da sua conta.');
-        }}
-        onRoleChange={setUserRole}
+        onLogin={handleOpenAuth}
+        onLogout={handleLogout}
+        onRoleChange={handleRoleChange}
         onNewArtworkClick={() =>
-          showToast('Abrindo formulário de cadastro de nova obra (RF03)...')
+          showToast(
+            `Olá ${currentUser?.name ?? ''}, abrindo formulário de nova obra (RF03)...`
+          )
         }
         onOpenCart={() => setIsCartOpen(true)}
       />
@@ -149,9 +230,11 @@ function HomePage() {
         isAuthenticated={isAuthenticated}
         onExploreClick={scrollToCatalog}
         onStartSellingClick={() => {
-          setIsAuthenticated(true);
-          setUserRole('artista');
-          showToast('Modo Artista ativado! Você já pode publicar suas obras.');
+          if (!isAuthenticated) {
+            handleOpenAuth();
+            return;
+          }
+          handleRoleChange('artista');
         }}
       />
 
