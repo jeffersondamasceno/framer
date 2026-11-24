@@ -12,16 +12,63 @@ enum UserRole {
   artista
 }
 
+enum ProcessStepType {
+  sketch
+  wip
+  video
+}
+
 model User {
   id               String    @id @default(uuid())
   name             String
   email            String    @unique
   passwordHash     String    @map("password_hash")
   role             UserRole  @default(comprador)
+  avatarUrl        String?   @map("avatar_url")
+  handle           String?   @unique
   resetToken       String?   @map("reset_token")
   resetTokenExpiry DateTime? @map("reset_token_expiry")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
+  artworks         Artwork[]
+
   @@map("users")
+}
+
+model Artwork {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String
+  technique   String
+  dimensions  String
+  price       Float
+  imageUrl    String   @map("image_url")
+  isAvailable Boolean  @default(true) @map("is_available")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  artistId    String   @map("artist_id")
+  artist      User     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  creativeProcess CreativeProcessStep[]
+
+  @@map("artworks")
+}
+
+model CreativeProcessStep {
+  id          String          @id @default(uuid())
+  title       String          
+  description String          
+  type        ProcessStepType 
+  mediaUrl    String          @map("media_url")
+  timestamp   String          
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  artworkId   String          @map("artwork_id")
+  artwork     Artwork         @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+
+  @@map("creative_process_steps")
 }

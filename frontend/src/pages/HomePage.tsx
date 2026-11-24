@@ -9,6 +9,7 @@ import HeroBanner from '../components/home/HeroBanner';
 import CatalogFilters from '../components/home/CatalogFilters';
 import ArtworkCard from '../components/home/ArtworkCard';
 import CreativeProcessModal from '../components/home/CreativeProcessModal';
+import NewArtworkModal from '../components/home/NewArtworkModal';
 import CartDrawer from '../components/home/CartDrawer';
 import ArtistChatModal from '../components/home/ArtistChatModal';
 import HomeFooter from '../components/home/HomeFooter';
@@ -33,15 +34,19 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
   const [userRole, setUserRole] = useState<'comprador' | 'artista'>('comprador');
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
+  const [artworks, setArtworks] = useState<Artwork[]>(MOCK_ARTWORKS);
+  const [isLoadingArtworks, setIsLoadingArtworks] = useState<boolean>(false);
+
+  const [isNewArtworkOpen, setIsNewArtworkOpen] = useState<boolean>(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [maxPrice, setMaxPrice] = useState<number>(1500);
-  const [onlyDocumentedProcess, setOnlyDocumentedProcess] = useState<boolean>(false);
+  const [onlyDocumentedProcess, setOnlyDocumentedProcess] =
+    useState<boolean>(false);
 
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([
-    { artwork: MOCK_ARTWORKS[0], quantity: 1 },
-  ]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const [chatTarget, setChatTarget] = useState<Artwork | null>(null);
@@ -79,6 +84,22 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
         localStorage.removeItem(TOKEN_KEY);
         setCurrentUser(null);
         setIsAuthenticated(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    setIsLoadingArtworks(true);
+    apiRequest<{ artworks: Artwork[] }>('/artworks')
+      .then(({ artworks: fetchedArtworks }) => {
+        if (fetchedArtworks.length > 0) {
+          setArtworks(fetchedArtworks);
+        }
+      })
+      .catch(() => {
+        // Mantém MOCK_ARTWORKS se o servidor estiver offline
+      })
+      .finally(() => {
+        setIsLoadingArtworks(false);
       });
   }, []);
 
@@ -128,8 +149,18 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
     }
   };
 
+  const handleArtworkCreated = (newArtwork: Artwork) => {
+    setArtworks((prev) => {
+      const withoutMocks = prev.filter(
+        (item) => !MOCK_ARTWORKS.some((mock) => mock.id === item.id)
+      );
+      return [newArtwork, ...withoutMocks];
+    });
+    showToast(`Obra "${newArtwork.title}" publicada com sucesso!`);
+  };
+
   const filteredArtworks = useMemo(() => {
-    return MOCK_ARTWORKS.filter((art) => {
+    return artworks.filter((art) => {
       const matchesSearch =
         art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         art.artistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,7 +172,13 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
 
       return matchesSearch && matchesCategory && matchesPrice && matchesProcess;
     });
-  }, [searchQuery, selectedCategory, maxPrice, onlyDocumentedProcess]);
+  }, [
+    artworks,
+    searchQuery,
+    selectedCategory,
+    maxPrice,
+    onlyDocumentedProcess,
+  ]);
 
   const handleAddToCart = (artwork: Artwork) => {
     if (!isAuthenticated) {
@@ -218,11 +255,17 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
         onLogin={handleOpenAuth}
         onLogout={handleLogout}
         onRoleChange={handleRoleChange}
-        onNewArtworkClick={() =>
-          showToast(
-            `Olá ${currentUser?.name ?? ''}, abrindo formulário de nova obra (RF03)...`
-          )
-        }
+        onNewArtworkClick={() => {
+          if (!isAuthenticated) {
+            handleOpenAuth();
+            return;
+          }
+          if (userRole !== 'artista') {
+            showToast('Altere seu perfil para Artista para publicar obras.');
+            return;
+          }
+          setIsNewArtworkOpen(true);
+        }}
         onOpenCart={() => setIsCartOpen(true)}
       />
 
@@ -251,10 +294,13 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
         <div className="d-flex align-items-center justify-content-between mb-4">
           <h2 className="h4 framer-serif fw-bold mb-0">Vitrine de Obras</h2>
           <span className="small text-secondary">
-            {filteredArtworks.length}{' '}
-            {filteredArtworks.length === 1
-              ? 'obra encontrada'
-              : 'obras encontradas'}
+            {isLoadingArtworks
+              ? 'Carregando obras...'
+              : `${filteredArtworks.length} ${
+                  filteredArtworks.length === 1
+                    ? 'obra encontrada'
+                    : 'obras encontradas'
+                }`}
           </span>
         </div>
 
@@ -295,6 +341,12 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
         )}
       </main>
 
+      <NewArtworkModal
+        isOpen={isNewArtworkOpen}
+        onClose={() => setIsNewArtworkOpen(false)}
+        onSuccess={handleArtworkCreated}
+      />
+
       <CreativeProcessModal
         artwork={selectedArtwork}
         onClose={() => setSelectedArtwork(null)}
@@ -311,7 +363,9 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
         onCheckout={() => {
           setIsCartOpen(false);
           setCart([]);
-          showToast('Pedido registrado com sucesso! Redirecionando para pagamento (RF06)...');
+          showToast(
+            'Pedido registrado com sucesso! Redirecionando para pagamento (RF06)...'
+          );
         }}
       />
 
