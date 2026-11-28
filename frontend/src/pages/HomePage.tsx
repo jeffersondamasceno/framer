@@ -185,6 +185,10 @@ function HomePage({ onNavigateToAuth }: HomePageProps) {
       showToast('Faça login ou cadastre-se para adicionar obras ao carrinho.');
       return;
     }
+    if (currentUser && artwork.artistId === currentUser.id) {
+      showToast('Você não pode adicionar sua própria obra ao carrinho.');
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((item) => item.artwork.id === artwork.id);
       if (existing) {

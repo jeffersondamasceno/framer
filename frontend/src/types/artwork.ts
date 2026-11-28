@@ -10,15 +10,17 @@ export interface CreativeProcessStep {
 export interface Artwork {
   id: string;
   title: string;
-  artistName: string;
-  artistHandle: string;
-  artistAvatar: string;
-  category: 'Pintura' | 'Cerâmica' | 'Ilustração Digital' | 'Escultura' | 'Têxtil';
+  description: string;
+  category: string;
+  technique: string;
+  dimensions: string;
   price: number;
   imageUrl: string;
-  description: string;
-  dimensions: string;
-  technique: string;
+  isAvailable?: boolean;
+  artistId?: string;
+  artistName: string;
+  artistAvatar: string;
+  artistHandle: string;
   hasDocumentedProcess: boolean;
   creativeProcess: CreativeProcessStep[];
 }
